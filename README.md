@@ -101,13 +101,44 @@ Open `preview.html` in a browser to see the exact email format.
 
 ## Scheduling the weekly report
 
-Run `python main.py weekly` on a schedule. Example cron entry for **every Monday at 8am**:
+The repo ships a **portable installer** that sets up a systemd user timer
+(Mondays 08:00, with catch-up if the machine was off at that time). It detects
+the project path and Python automatically, so it works for **any user on any
+machine** — no hardcoded paths.
 
-```cron
-0 8 * * 1  cd /home/varun/embitel && /usr/bin/python3 main.py weekly >> data/weekly.log 2>&1
+```bash
+./install_schedule.sh                      # default: Mondays 08:00
+./install_schedule.sh "Fri *-*-* 09:30:00" # custom time (systemd OnCalendar format)
 ```
 
-(Run `crontab -e` and paste the line. Adjust the path to `python3` if needed.)
+Manage it:
+
+```bash
+systemctl --user list-timers embitel-weekly.timer   # next run / status
+systemctl --user start embitel-weekly.service       # run once now (test)
+journalctl --user -u embitel-weekly.service          # logs
+./uninstall_schedule.sh                              # remove the schedule
+```
+
+> **Catch-up:** the missed run fires shortly after you next log in. For an
+> always-on / headless box that should run without anyone logging in, also run
+> `sudo loginctl enable-linger $USER`.
+>
+> **Laptop note:** plain `cron` does NOT catch up on missed runs — that's why we
+> use a systemd timer with `Persistent=true`. If your machine has no systemd,
+> fall back to cron: `0 8 * * 1  cd /path/to/embitel && ./run_weekly.sh`.
+
+### Handing this project to someone else
+
+The schedule lives in the user's home (`~/.config/systemd/user/`), and secrets
+live in `.env` — neither travels with the folder. So a new person needs to:
+
+1. `pip install -r requirements.txt` (or the `--user --break-system-packages` form)
+2. `cp .env.example .env` and add their own `GEMINI_API_KEY` + Gmail credentials
+3. Edit `config.yaml` recipients/competitors as desired
+4. Run `./install_schedule.sh` to set up their own weekly timer
+
+That's it — the scripts figure out their paths automatically.
 
 ---
 

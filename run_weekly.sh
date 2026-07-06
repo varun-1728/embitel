@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Weekly competitor-intelligence job (run by cron).
+# Weekly competitor-intelligence job (run by the scheduler).
 # Refreshes all competitors, then builds + emails the report.
-# Output is appended to data/weekly.log with a timestamp header.
+# Portable: resolves its own location, so it works from any path / any user.
 
-cd /home/varun/embitel || exit 1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
+
+PYTHON="$(command -v python3)"
 
 echo "===== weekly run: $(date '+%Y-%m-%d %H:%M:%S %Z') =====" >> data/weekly.log
-/usr/bin/python3 main.py weekly >> data/weekly.log 2>&1
+"$PYTHON" main.py weekly >> data/weekly.log 2>&1
 echo "" >> data/weekly.log
