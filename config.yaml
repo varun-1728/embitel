@@ -1,0 +1,68 @@
+# ==========================================================================
+# Embitel Competitor Intelligence Agent — configuration
+# Edit this file to change who/what the agent tracks. No code changes needed.
+# ==========================================================================
+
+# The company whose competitors we track (used to frame the LLM prompts).
+company:
+  name: "Embitel"
+  description: >
+    Automotive software and product engineering services company. Focus areas:
+    embedded systems, automotive electronics, EV/e-mobility, ADAS, connected
+    vehicles, AUTOSAR, functional safety (ISO 26262), IoT, and digital commerce.
+
+# Competitors to monitor. Add/remove freely.
+# `aliases` help the agent recognise the company in questions and search results.
+competitors:
+  - name: "KPIT Technologies"
+    aliases: ["KPIT"]
+  - name: "Tata Elxsi"
+    aliases: ["Elxsi"]
+  - name: "L&T Technology Services"
+    aliases: ["LTTS", "LNT Technology"]
+  - name: "Cyient"
+    aliases: []
+  - name: "HCLTech"
+    aliases: ["HCL Technologies", "HCL ERS"]
+  - name: "Bosch Global Software Technologies"
+    aliases: ["BGSW", "Bosch Engineering"]
+  - name: "Harman"
+    aliases: ["Harman International"]
+  - name: "Luxoft"
+    aliases: ["DXC Luxoft"]
+  - name: "Tata Technologies"
+    aliases: []
+
+# What to track. These drive the research prompts and report sections.
+categories:
+  - key: "technology"
+    label: "New Technologies & Products"
+  - key: "hiring"
+    label: "Hiring & Headcount Trends"
+  - key: "acquisition"
+    label: "Acquisitions & M&A"
+  - key: "partnership"
+    label: "Partnerships & Alliances"
+  - key: "other"
+    label: "Other Notable Developments"
+
+# How far back the research/refresh looks for "recent" news.
+research:
+  lookback_days: 14
+  # Max findings the LLM is asked to return per competitor per refresh.
+  max_findings_per_competitor: 8
+
+# Weekly report settings.
+report:
+  # Recipients of the weekly email (their Gmail inboxes).
+  recipients:
+    - "varunreddy1728@gmail.com"
+  subject_prefix: "[Embitel Competitor Watch]"
+  # Only include findings from the last N days in the weekly report.
+  window_days: 7
+
+# LLM model per provider (override defaults if you like).
+models:
+  gemini: "gemini-2.5-flash-lite"
+  claude: "claude-sonnet-5"
+  groq: "llama-3.3-70b-versatile"

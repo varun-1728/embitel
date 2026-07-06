@@ -1,0 +1,9 @@
+# Core
+google-genai>=1.0.0        # default LLM backend (Gemini) + Google Search grounding
+python-dotenv>=1.0.0       # load .env
+PyYAML>=6.0                # config.yaml
+rich>=13.0                 # nicer CLI output
+
+# Optional swappable backends (install only if you use them)
+# anthropic>=0.40.0        # Claude backend
+# groq>=0.11.0             # Groq backend
