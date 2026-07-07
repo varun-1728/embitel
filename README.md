@@ -99,34 +99,79 @@ Open `preview.html` in a browser to see the exact email format.
 
 ---
 
-## Scheduling the weekly report
+## Scheduling the automatic report
 
-The repo ships a **portable installer** that sets up a systemd user timer
-(Mondays 08:00, with catch-up if the machine was off at that time). It detects
-the project path and Python automatically, so it works for **any user on any
-machine** — no hardcoded paths.
+### Pick your interval (default: weekly)
 
-```bash
-./install_schedule.sh                      # default: Mondays 08:00
-./install_schedule.sh "Fri *-*-* 09:30:00" # custom time (systemd OnCalendar format)
+The schedule is driven by the `schedule:` section of **`config.yaml`** — edit it,
+then run the installer. No script editing needed.
+
+```yaml
+schedule:
+  interval: "weekly"   # daily | weekly | monthly
+  time: "08:00"        # 24h local time
+  day: "Mon"           # weekly only: Mon..Sun
+  day_of_month: 1      # monthly only: 1-28
+  oncalendar: ""       # advanced: raw systemd OnCalendar string; overrides all above
 ```
 
-Manage it:
+Examples: `interval: daily, time: "18:00"` → every day at 6pm.
+`interval: monthly, day_of_month: 1` → 1st of each month.
+
+Check what it will do without installing:
 
 ```bash
-systemctl --user list-timers embitel-weekly.timer   # next run / status
-systemctl --user start embitel-weekly.service       # run once now (test)
-journalctl --user -u embitel-weekly.service          # logs
-./uninstall_schedule.sh                              # remove the schedule
+python3 main.py schedule-spec        # e.g. "every Mon at 08:00"
 ```
 
-> **Catch-up:** the missed run fires shortly after you next log in. For an
-> always-on / headless box that should run without anyone logging in, also run
-> `sudo loginctl enable-linger $USER`.
+### Install (Linux, systemd)
+
+```bash
+./install_schedule.sh                    # uses config.yaml
+./install_schedule.sh "Fri *-*-* 09:30:00"   # or a one-off raw OnCalendar override
+```
+
+The installer detects the project path + Python automatically, so it works for
+**any user on any machine** — nothing is hardcoded.
+
+### Stopping / pausing the automatic job
+
+```bash
+./uninstall_schedule.sh                              # remove it entirely
+systemctl --user disable --now embitel-weekly.timer  # pause (re-enable later)
+systemctl --user list-timers embitel-weekly.timer    # check next run / status
+systemctl --user start embitel-weekly.service        # run once now (manual test)
+journalctl --user -u embitel-weekly.service          # view logs
+```
+
+To change the interval, edit `config.yaml` and re-run `./install_schedule.sh`.
+
+> **Catch-up:** a missed run (machine off) fires shortly after you next log in
+> (`Persistent=true`). For an always-on / headless box that runs without login,
+> also run `sudo loginctl enable-linger $USER`.
+
+### Windows (Task Scheduler)
+
+The Python commands (`python main.py chat|refresh|report|weekly`) work the same
+on Windows. The scheduling scripts differ — use the PowerShell installer, which
+reads the same `config.yaml` schedule:
+
+```powershell
+# in the project folder, in PowerShell
+powershell -ExecutionPolicy Bypass -File .\install_schedule.ps1
+
+# stop it later:
+schtasks /Delete /TN EmbitelWeeklyReport /F
+# check it:
+schtasks /Query /TN EmbitelWeeklyReport
+```
+
+> The bash/systemd/cron commands above are **Linux/macOS only** and do NOT work
+> on Windows. On Windows use the `.ps1` installer + `run_weekly.bat`.
 >
-> **Laptop note:** plain `cron` does NOT catch up on missed runs — that's why we
-> use a systemd timer with `Persistent=true`. If your machine has no systemd,
-> fall back to cron: `0 8 * * 1  cd /path/to/embitel && ./run_weekly.sh`.
+> **Catch-up on Windows:** the installer enables `StartWhenAvailable`, so a
+> missed run (PC off/asleep) fires shortly after your next boot/logon — the same
+> behavior as Linux. (Windows waits a few minutes after startup, then runs it.)
 
 ### Handing this project to someone else
 

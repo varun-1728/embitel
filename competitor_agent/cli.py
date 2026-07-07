@@ -186,6 +186,19 @@ def cmd_competitors(args):
         out(f"  • {c.name}{alias}")
 
 
+def cmd_schedule_spec(args):
+    """Print the scheduler string for the requested format (used by installers)."""
+    from . import schedule_spec
+
+    cfg, _, _ = _bootstrap(need_llm=False)
+    if args.format == "oncalendar":
+        print(schedule_spec.oncalendar(cfg))
+    elif args.format == "schtasks":
+        print(schedule_spec.schtasks_args(cfg))
+    elif args.format == "human":
+        print(schedule_spec.human(cfg))
+
+
 def cmd_stats(args):
     cfg, store, _ = _bootstrap(need_llm=False)
     s = store.stats()
@@ -217,6 +230,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("weekly", help="Refresh all + email report (for cron)").set_defaults(func=cmd_weekly)
     sub.add_parser("competitors", help="List tracked competitors").set_defaults(func=cmd_competitors)
     sub.add_parser("stats", help="Knowledge base statistics").set_defaults(func=cmd_stats)
+
+    ss = sub.add_parser("schedule-spec", help="Print schedule string from config (for installers)")
+    ss.add_argument("--format", choices=["oncalendar", "schtasks", "human"], default="human")
+    ss.set_defaults(func=cmd_schedule_spec)
     return p
 
 

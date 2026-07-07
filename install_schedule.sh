@@ -1,27 +1,36 @@
 #!/usr/bin/env bash
-# Portable installer for the weekly report schedule.
-# Detects this project's location automatically and installs a systemd user
-# timer (Mondays 08:00, with catch-up if the machine was off).
+# Portable installer for the automatic report schedule (Linux + systemd).
 #
-# Usage:
-#   ./install_schedule.sh            # default: Mondays 08:00
-#   ./install_schedule.sh "Fri *-*-* 09:30:00"   # custom OnCalendar schedule
+# The interval/time come from the `schedule:` section of config.yaml
+# (default: weekly, Mondays 08:00). Edit config.yaml to change it, then re-run
+# this script. You can also pass a raw systemd OnCalendar string to override:
 #
-# Run as your normal user (NOT root). Works on any Linux box with systemd.
+#   ./install_schedule.sh                          # use config.yaml
+#   ./install_schedule.sh "*-*-* 18:00:00"         # every day at 18:00
+#   ./install_schedule.sh "Fri *-*-* 09:30:00"     # Fridays 09:30
+#
+# Run as your normal user (NOT root).
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WRAPPER="$SCRIPT_DIR/run_weekly.sh"
-ONCALENDAR="${1:-Mon *-*-* 08:00:00}"
+PYTHON="$(command -v python3)"
+
+# Schedule: explicit arg wins, else derive from config.yaml.
+if [ "${1:-}" != "" ]; then
+  ONCALENDAR="$1"
+else
+  ONCALENDAR="$("$PYTHON" "$SCRIPT_DIR/main.py" schedule-spec --format oncalendar)"
+fi
+HUMAN="$("$PYTHON" "$SCRIPT_DIR/main.py" schedule-spec --format human)"
 
 UNIT_DIR="$HOME/.config/systemd/user"
 SERVICE="$UNIT_DIR/embitel-weekly.service"
 TIMER="$UNIT_DIR/embitel-weekly.timer"
 
 if ! command -v systemctl >/dev/null 2>&1; then
-  echo "ERROR: systemd (systemctl) not found on this machine."
-  echo "Use the cron fallback instead — see README.md."
+  echo "ERROR: systemd (systemctl) not found. Use the cron fallback — see README.md."
   exit 1
 fi
 
@@ -30,7 +39,7 @@ mkdir -p "$UNIT_DIR"
 
 cat > "$SERVICE" <<EOF
 [Unit]
-Description=Embitel competitor-intelligence weekly report (refresh + email)
+Description=Embitel competitor-intelligence report (refresh + email)
 
 [Service]
 Type=oneshot
@@ -39,7 +48,7 @@ EOF
 
 cat > "$TIMER" <<EOF
 [Unit]
-Description=Weekly Embitel competitor report — catch up if missed
+Description=Automatic Embitel competitor report — catch up if missed
 
 [Timer]
 OnCalendar=$ONCALENDAR
@@ -54,9 +63,11 @@ export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 systemctl --user daemon-reload
 systemctl --user enable --now embitel-weekly.timer
 
-echo "Installed. Schedule: $ONCALENDAR"
-echo "Project:  $SCRIPT_DIR"
+echo "Installed. Runs: $HUMAN"
+echo "  (systemd OnCalendar = $ONCALENDAR)"
+echo "  Project: $SCRIPT_DIR"
+echo
 systemctl --user list-timers embitel-weekly.timer || true
 echo
-echo "NOTE: catch-up runs when you next log in. For a headless/always-on box"
-echo "that should run without login, also run:  sudo loginctl enable-linger $USER"
+echo "To STOP it later:  ./uninstall_schedule.sh"
+echo "To PAUSE it:       systemctl --user disable --now embitel-weekly.timer"

@@ -57,9 +57,24 @@ report:
   # Recipients of the weekly email (their Gmail inboxes).
   recipients:
     - "varunreddy1728@gmail.com"
+    - "varun.24bcs10009@sst.scaler.com"
   subject_prefix: "[Embitel Competitor Watch]"
   # Only include findings from the last N days in the weekly report.
   window_days: 7
+
+# How often the automatic report runs. The installer reads this.
+schedule:
+  # interval: daily | weekly | monthly   (default weekly)
+  interval: "weekly"
+  # Time of day to run, 24h local time.
+  time: "08:00"
+  # For interval=weekly only: which day. Mon Tue Wed Thu Fri Sat Sun
+  day: "Mon"
+  # For interval=monthly only: day of month (1-28).
+  day_of_month: 1
+  # Advanced: raw systemd OnCalendar string. If set (non-empty), it overrides
+  # everything above. e.g. "*-*-* 06:00:00" or "Fri *-*-* 09:30:00"
+  oncalendar: ""
 
 # LLM model per provider (override defaults if you like).
 models:
